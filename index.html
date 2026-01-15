@@ -9,12 +9,13 @@
       <img src="/tarball.svg" class="logo" alt="tarball icon">
     </a>
     <h1>tarball practice</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
     <p class="description">
-      Click on the Vite and TypeScript logos to learn more
+      Select files to create a tarball in your browser
     </p>
+    <div class="card">
+      <input type="file" id="file-input" multiple>
+      <pre id="file-list"></pre>
+    </div>
   </div>
 </div>
 <script type="module" src="/src/main.ts"></script>
