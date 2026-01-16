@@ -26,8 +26,7 @@ fileInput.addEventListener('change', async () => {
 
   // Start streaming, push inputs
   let lastUpdate = 0
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i]
+  for (const [i, file] of files.entries()) {
     let fileProcessed = 0
 
     // Create a progress tracking transform stream
