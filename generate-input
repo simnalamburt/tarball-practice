@@ -4,12 +4,24 @@ use warnings;
 use autodie;
 use File::Path qw(make_path);
 
-my $content = "testinput\n" x 1000000;
-
 make_path('input');
 
+my $small = "testinput\n" x 10;
+my $medium = "testinput\n" x 1000000;
+my $huge = "testinput\n" x 1000000000;
+
 for my $i (0..2) {
-  open my $fh, '>', "input/test$i";
-  print $fh $content;
+  open my $fh, '>', "input/smallinput$i";
+  print $fh $small;
+  close $fh;
+}
+for my $i (0..2) {
+  open my $fh, '>', "input/input$i";
+  print $fh $medium;
+  close $fh;
+}
+for my $i (0..2) {
+  open my $fh, '>', "input/hugeinput$i";
+  print $fh $huge;
   close $fh;
 }
