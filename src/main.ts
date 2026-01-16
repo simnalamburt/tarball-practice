@@ -1,5 +1,5 @@
 import './style.css'
-import { createTarPacker } from 'modern-tar'
+import { createTarPacker, createGzipEncoder } from 'modern-tar'
 
 const fileInput = document.querySelector<HTMLInputElement>('#file-input')!
 const fileList = document.querySelector<HTMLPreElement>('#file-list')!
@@ -13,12 +13,12 @@ fileInput.addEventListener('change', async () => {
   }
   fileList.textContent = `${files.length} file(s) selected:\n`
 
-  // Create a stream
+  // Create streams
   const { readable, controller } = createTarPacker()
+  const gzip = createGzipEncoder()
 
-  // Setup sinks
-  const sink = new Response(readable)
-  const blobPromise = sink.blob()
+  // Connect streams, setup a sink
+  const blobPromise = new Response(readable.pipeThrough(gzip)).blob()
 
   // Start streaming, push inputs
   for (const file of files) {
@@ -34,10 +34,8 @@ fileInput.addEventListener('change', async () => {
   // Download tarball
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
-  link.download = 'output.tar'
-  document.body.appendChild(link)
+  link.download = 'output.tar.gz'
   link.click()
-  document.body.removeChild(link)
   await sleep_ms(1000) // Wait a bit before revoking
   URL.revokeObjectURL(link.href)
 })
