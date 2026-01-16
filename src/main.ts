@@ -25,20 +25,26 @@ fileInput.addEventListener('change', async () => {
   const blobPromise = new Response(readable.pipeThrough(gzip)).blob()
 
   // Start streaming, push inputs
+  let lastUpdate = 0
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
     let fileProcessed = 0
 
     // Create a progress tracking transform stream
     const progressStream = new TransformStream<Uint8Array, Uint8Array>({
-      transform(chunk, controller) {
+      async transform(chunk, controller) {
         fileProcessed += chunk.byteLength
         processedSize += chunk.byteLength
 
-        // Update progress display
-        const fileProgress = file.size > 0 ? (fileProcessed / file.size * 100).toFixed(1) : '100'
-        const totalProgress = totalSize > 0 ? (processedSize / totalSize * 100).toFixed(1) : '100'
-        updateProgress(files, i, fileProgress, totalProgress)
+        // Yield to event loop periodically to allow rendering (~60fps)
+        const now = Date.now()
+        if (now - lastUpdate >= 16) {
+          lastUpdate = now
+          const fileProgress = file.size > 0 ? (fileProcessed / file.size * 100).toFixed(1) : '100'
+          const totalProgress = totalSize > 0 ? (processedSize / totalSize * 100).toFixed(1) : '100'
+          updateProgress(files, i, fileProgress, totalProgress)
+          await new Promise(resolve => setTimeout(resolve, 0))
+        }
 
         controller.enqueue(chunk)
       }
