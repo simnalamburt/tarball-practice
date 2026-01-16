@@ -1,5 +1,5 @@
 import './style.css'
-import { packTar } from 'modern-tar'
+import { createTarPacker } from 'modern-tar'
 
 const fileInput = document.querySelector<HTMLInputElement>('#file-input')!
 const fileList = document.querySelector<HTMLPreElement>('#file-list')!
@@ -11,20 +11,27 @@ fileInput.addEventListener('change', async () => {
     fileList.textContent = 'No files selected'
     return
   }
-  fileList.textContent = `${files.length} file(s) selected:\n` + files.map(f => `- ${f.name} (${formatSize(f.size)})\n`).join('')
+  fileList.textContent = `${files.length} file(s) selected:\n`
 
-  // Create tarball
-  const tar = await packTar(await Promise.all(files.map(async f => ({
-    header: { name: f.name, size: f.size },
-    body: await f.bytes(),
-  }))))
+  // Create a stream
+  const { readable, controller } = createTarPacker()
 
-  // Download tarball
-  const blob = new Blob([tar as Uint8Array<ArrayBuffer>], { type: 'application/x-tar' })
-  // SAFETY: Uint8Array<SharedArrayBuffer> can be passed to Blob constructor
+  // Setup sinks
+  const sink = new Response(readable)
+  const blobPromise = sink.blob()
+
+  // Start streaming, push inputs
+  for (const file of files) {
+    await file.stream().pipeTo(controller.add({ name: file.name, size: file.size, type: 'file' }))
+    fileList.textContent += `- ${file.name} (${formatSize(file.size)})\n`
+  }
+  controller.finalize()
+
+  // Wait for completion
+  const blob = await blobPromise
   fileList.textContent += 'Tarball creation finished.\n'
 
-  // Download blob
+  // Download tarball
   const link = document.createElement('a')
   link.href = URL.createObjectURL(blob)
   link.download = 'output.tar'
