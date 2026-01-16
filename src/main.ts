@@ -37,7 +37,7 @@ fileInput.addEventListener('change', async () => {
 
         // Yield to event loop periodically to allow rendering (~60fps)
         const now = Date.now()
-        if (now - lastUpdate >= 16) {
+        if (now - lastUpdate >= 1000 / 60) {
           lastUpdate = now
           const fileProgress = file.size > 0 ? (fileProcessed / file.size * 100).toFixed(1) : '100'
           const totalProgress = totalSize > 0 ? (processedSize / totalSize * 100).toFixed(1) : '100'
@@ -59,11 +59,7 @@ fileInput.addEventListener('change', async () => {
   const blob = await blobPromise
 
   // Show final result
-  fileList.textContent = `${files.length} file(s) selected:\n`
-  for (const file of files) {
-    fileList.textContent += `- ${file.name} (${formatSize(file.size)}) ✓\n`
-  }
-  fileList.textContent += `\nTarball creation finished. (${formatSize(blob.size)})\n`
+  fileList.textContent = `${files.length} file(s) selected:\n` + files.map(file => `- ${file.name} (${formatSize(file.size)}) ✓\n`).join('') + `\nTarball creation finished. (${formatSize(blob.size)})\n`
 
   // Download tarball
   const link = document.createElement('a')
@@ -75,19 +71,7 @@ fileInput.addEventListener('change', async () => {
 })
 
 function updateProgress(files: File[], currentIndex: number, fileProgress: string, totalProgress: string) {
-  let text = `${files.length} file(s) selected:\n`
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i]
-    if (i < currentIndex) {
-      text += `- ${file.name} (${formatSize(file.size)}) ✓\n`
-    } else if (i === currentIndex) {
-      text += `- ${file.name} (${formatSize(file.size)}) ${fileProgress}%\n`
-    } else {
-      text += `- ${file.name} (${formatSize(file.size)})\n`
-    }
-  }
-  text += `\nTotal progress: ${totalProgress}%`
-  fileList.textContent = text
+  fileList.textContent = `${files.length} file(s) selected:\n` + files.map((file, i) => `- ${file.name} (${formatSize(file.size)}) ${i < currentIndex ? '✓' : i === currentIndex ? `${fileProgress}%` : ''}\n`).join('') + `\nTotal progress: ${totalProgress}%`
 }
 
 function formatSize(bytes: number): string {
