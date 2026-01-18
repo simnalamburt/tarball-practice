@@ -8,5 +8,6 @@ This project was created to test generating tarballs using only the browser.
 
 # Then run the project
 pnpm i
+pnpm test
 pnpm dev
 ```
