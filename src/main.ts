@@ -2,20 +2,19 @@ import './style.css'
 import { createTarPacker, createGzipEncoder } from 'modern-tar'
 
 const fileInput = document.querySelector<HTMLInputElement>('#file-input')!
-const fileList = document.querySelector<HTMLPreElement>('#file-list')!
+const output = document.querySelector<HTMLPreElement>('#output')!
 
 fileInput.addEventListener('change', async () => {
   // Check selected files
   const files = [...(fileInput.files ?? [])]
   if (files.length === 0) {
-    fileList.textContent = 'No files selected'
+    output.textContent = 'No files selected'
     return
   }
-  fileList.textContent = `${files.length} file(s) selected:\n`
 
   // Calculate total size for overall progress
   const totalSize = files.reduce((acc, file) => acc + file.size, 0)
-  let processedSize = 0
+  let totalProcessed = 0
 
   // Create streams
   const { readable, controller } = createTarPacker()
@@ -33,16 +32,14 @@ fileInput.addEventListener('change', async () => {
     const progressStream = new TransformStream<Uint8Array, Uint8Array>({
       async transform(chunk, controller) {
         fileProcessed += chunk.byteLength
-        processedSize += chunk.byteLength
+        totalProcessed += chunk.byteLength
 
-        // Yield to event loop periodically to allow rendering (~60fps)
+        // Yield periodically to allow rendering (≤60fps)
         const now = Date.now()
         if (now - lastUpdate >= 1000 / 60) {
           lastUpdate = now
-          const fileProgress = file.size > 0 ? (fileProcessed / file.size * 100).toFixed(1) : '100'
-          const totalProgress = totalSize > 0 ? (processedSize / totalSize * 100).toFixed(1) : '100'
-          updateProgress(files, i, fileProgress, totalProgress)
-          await new Promise(resolve => setTimeout(resolve, 0))
+          output.textContent = formatProgress(files, totalSize, totalProcessed, i, fileProcessed)
+          await yield_until_idle()
         }
 
         controller.enqueue(chunk)
@@ -59,7 +56,7 @@ fileInput.addEventListener('change', async () => {
   const blob = await blobPromise
 
   // Show final result
-  fileList.textContent = `${files.length} file(s) selected:\n` + files.map(file => `- ${file.name} (${formatSize(file.size)}) ✓\n`).join('') + `\nTarball creation finished. (${formatSize(blob.size)})\n`
+  output.textContent = formatProgress(files, totalSize, totalSize, files.length, 0) + `\nTarball creation finished. (${formatSize(blob.size)})\n`
 
   // Download tarball
   const link = document.createElement('a')
@@ -70,15 +67,34 @@ fileInput.addEventListener('change', async () => {
   URL.revokeObjectURL(link.href)
 })
 
-function updateProgress(files: File[], currentIndex: number, fileProgress: string, totalProgress: string) {
-  fileList.textContent = `${files.length} file(s) selected:\n` + files.map((file, i) => `- ${file.name} (${formatSize(file.size)}) ${i < currentIndex ? '✓' : i === currentIndex ? `${fileProgress}%` : ''}\n`).join('') + `\nTotal progress: ${totalProgress}%`
+function formatProgress(
+  files: File[],
+  totalSize: number,
+  totalProcessed: number,
+  currentIndex: number,
+  fileProcessed: number,
+): string {
+  const formatPercent = (numerator: number, denominator: number): string =>
+    denominator === 0 ? '100.0' : (numerator / denominator * 100).toFixed(1)
+  return `${files.length} file(s) selected:\n` +
+    files.map((file, i) =>
+      i < currentIndex ? `- ✅ ${file.name} (${formatSize(file.size)})\n` :
+      i === currentIndex ? `- ⏳ ${file.name} (${formatSize(file.size)}) ${formatPercent(fileProcessed, file.size)}%\n` :
+      `- ⬜ ${file.name} (${formatSize(file.size)})\n`
+    ).join('') + `\nTotal progress: ${formatPercent(totalProcessed, totalSize)}%`
 }
 
 function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MiB`
-  return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GiB`
+  return (
+    bytes < 1024 ? `${bytes} B` :
+    bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KiB` :
+    bytes < 1024 * 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MiB` :
+    `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GiB`
+  )
+}
+
+function yield_until_idle() {
+  return new Promise(resolve => requestIdleCallback(resolve))
 }
 
 function sleep_ms(ms: number) {

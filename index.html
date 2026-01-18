@@ -3,19 +3,15 @@
 <link rel="icon" type="image/svg+xml" href="/tarball.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>tarball on browser</title>
-<div id="app">
-  <div>
-    <a href="https://github.com/ayuhito/modern-tar" target="_blank">
-      <img src="/tarball.svg" class="logo" alt="tarball icon">
-    </a>
-    <h1>tarball practice</h1>
-    <p class="description">
-      Select files to create a tarball in your browser
-    </p>
-    <div class="card">
-      <input type="file" id="file-input" multiple>
-      <pre id="file-list"></pre>
-    </div>
-  </div>
+<div>
+  <a href="https://github.com/ayuhito/modern-tar" target="_blank">
+    <img src="/tarball.svg" class="logo" alt="tarball icon">
+  </a>
 </div>
+<h1>tarball practice</h1>
+<div class="description">
+  Select files to create a tarball in your browser
+</div>
+<input type="file" id="file-input" multiple>
+<pre id="output"></pre>
 <script type="module" src="/src/main.ts"></script>
