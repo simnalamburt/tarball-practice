@@ -1,5 +1,5 @@
-tarball-practice
-========
+# tarball-practice
+
 This project was created to test generating tarballs using only the browser.
 
 ```bash
