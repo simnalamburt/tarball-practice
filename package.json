@@ -11,10 +11,10 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "modern-tar": "^0.7.3",
-    "oxfmt": "^0.26.0",
-    "oxlint": "^1.39.0",
-    "typescript": "~5.9.3",
+    "modern-tar": "^0.7.6",
+    "oxfmt": "^0.54.0",
+    "oxlint": "^1.69.0",
+    "typescript": "~6.0.3",
     "vite": "npm:rolldown-vite@7.2.5"
   },
   "packageManager": "pnpm@11.7.0"
